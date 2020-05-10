@@ -28,11 +28,3 @@ for (page_result in seq(from = 1, to = 51, by = 50)) {
 
   print(paste("Page:", page_result))  
 }
-
-
-
-
-
-
-
-
