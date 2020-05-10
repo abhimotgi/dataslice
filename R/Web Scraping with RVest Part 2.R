@@ -20,5 +20,4 @@ get_cast = function(movie_link) {
 
 cast = sapply(movie_links, FUN = get_cast, USE.NAMES = FALSE)
 
-
 movies = data.frame(name, year, rating, synopsis, cast, stringsAsFactors = FALSE)
