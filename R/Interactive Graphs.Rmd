@@ -1,0 +1,105 @@
+---
+title: "Interactive Graphs"
+output: html_notebook
+---
+
+```{r}
+library(ggplot2)
+library(plotly)
+library(dplyr)
+library(readr)
+library(lubridate)
+library(stringr)
+library(ggthemes)
+library(extrafont)
+
+space_missions <- read_csv("space_missions.csv") %>%
+  rename(Mission_Cost = Rocket) %>%
+  mutate(Datetime = as_datetime(as.POSIXct(Datum, format = "%a %b %d, %Y %H:%M UTC")))
+```
+
+```{r}
+graph.space_times = space_missions %>%
+  mutate(Location = str_extract(Location, "(USA)|(Russia)")) %>%
+  filter(!is.na(Location)) %>%
+  count(Location, Day = wday(Datetime, label=TRUE), Month = month(Datetime, label=TRUE)) %>%
+  filter(!is.na(Day), !is.na(Month)) %>%
+  ggplot(aes(x=Day, y=Month, fill=n,
+             text=paste0("Missions: ", n))) +
+  geom_tile() +
+  facet_grid(~Location) +
+  theme_minimal() +
+  scale_fill_gradient(low = "black", high = "#8de1f0") +
+  labs(title = "Times of Space Missions") +
+  theme(panel.grid.major=element_blank(),
+        panel.grid.minor=element_blank(),
+        text = element_text(family="DM Sans"),
+        plot.title = element_text(hjust = 0.5),
+        legend.position = "none")
+```
+
+```{r}
+font = list(
+  family = "DM Sans",
+  size = 15,
+  color = "white"
+)
+
+label = list(
+  bgcolor = "#232F34",
+  bordercolor = "transparent",
+  font = font
+)
+
+space_times = ggplotly(graph.space_times, tooltip=c("x", "y", "text")) %>%
+  style(hoverlabel = label) %>%
+  layout(font = font,
+         yaxis = list(fixedrange = TRUE),
+         xaxis = list(fixedrange = TRUE)) %>%
+  config(displayModeBar = FALSE)
+```
+
+```{r}
+myColors = c( "#ed4c28", "#f2ce49","#ed77be","#41C475")
+
+graph.mission_costs = space_missions %>%
+  ggplot(aes(x=year(Datetime), y=Mission_Cost, color=`Status Mission`,
+             text=paste0("Location: ", Location,
+                         "\nCompany: ", `Company Name`,
+                         "\nRocket: ", Detail,
+                         "\nTime: ", Datum))) +
+  geom_point() +
+  theme_minimal() +
+  labs(title = "Rocket Launches by Cost") +
+  xlab("Year") +
+  ylab("Mission Cost ($ USD)") +
+  guides(color=guide_legend(title="Mission Status")) +
+  theme(text = element_text(family="DM Sans"),
+        plot.title = element_text(hjust = 0.5),
+        panel.grid.major=element_blank(),
+        panel.grid.minor=element_blank()) + 
+  scale_color_manual(values = myColors)
+```
+
+```{r}
+graph.mission_costs.interactive = ggplotly(graph.mission_costs,
+         tooltip=c("y", "text"))%>%
+  style(hoverlabel = label) %>%
+  layout(font = font) %>%
+  config(displayModeBar = FALSE, showTips = FALSE)
+```
+
+```{r}
+library(htmlwidgets)
+
+saveWidget(graph.mission_costs.interactive, "mission_costs.html")
+
+```
+
+```{r}
+Sys.setenv("plotly_username"="dataslice")
+Sys.setenv("plotly_api_key"="x")
+
+api_create(space_times, "Space Times")
+```
+
