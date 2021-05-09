@@ -1,0 +1,84 @@
+---
+title: "Dplyr tutorial"
+output:
+  html_document:
+    df_print: paged
+---
+```{r}
+library(dplyr)
+library(readr)
+billboard100 <- read_csv("billboard100.csv")
+```
+
+# Piping %>%
+```{r}
+head(billboard100, 10)
+
+billboard100 %>% head(10)
+10 %>% head(billboard100, .)
+```
+# Select
+```{r}
+billboard100 %>%
+  select(date, rank, song, artist, 'weeks-on-board')
+
+billboard100 %>%
+  select(date:artist, weeks_popular='weeks-on-board')
+
+billboard100 %>%
+  select(-'last-week', -'peak-rank')
+```
+# Mutate
+```{r}
+billboard100 %>%
+  select(date:artist, weeks_popular='weeks-on-board') %>%
+  mutate(is_collab = grepl('Featuring', artist)) %>%
+  select(artist, is_collab, everything())
+```
+# Filter
+```{r}
+billboard100 %>%
+  select(date:artist, weeks_popular='weeks-on-board') %>%
+  filter(weeks_popular >= 20, artist == 'Drake' | artist == 'Taylor Swift')
+```
+
+# Distinct
+```{r}
+billboard100 %>%
+  select(date:artist, weeks_popular='weeks-on-board') %>%
+  filter(artist == 'Drake') %>%
+  distinct(song)
+
+billboard100 %>%
+  select(date:artist, weeks_popular='weeks-on-board') %>%
+  filter(artist == 'Drake') %>%
+  distinct(song) %>%
+  .$song
+```
+
+# Group_by & Summarise
+```{r}
+billboard100 %>%
+  select(date:artist, weeks_popular='weeks-on-board') %>%
+  filter(artist == 'Drake') %>%
+  group_by(song) %>%
+  summarise(total_weeks_popular = max(weeks_popular))
+```
+# Arrange
+```{r}
+billboard100 %>%
+  select(date:artist, weeks_popular='weeks-on-board') %>%
+  filter(artist == 'Drake') %>%
+  group_by(song) %>%
+  summarise(total_weeks_popular = max(weeks_popular)) %>%
+  arrange(desc(total_weeks_popular), song) %>%
+  head(10)
+```
+
+# Count
+```{r}
+billboard100 %>%
+  select(date:artist, weeks_popular='weeks-on-board')  %>%
+  count(artist) %>%
+  arrange(desc(n))
+```
